@@ -21,25 +21,19 @@ def __parse_html(html: HTMLParser, year: int) -> enumerate[Film]:
         if not data:
             continue
 
-        rank = int(data[0].text())
-        title = data[1].text()
-        release_date_value = data[8].text()  # Release date formats: Jan 2, May 26
-        distributor = data[9].text(strip=True)
-
         try:
-            d = f"{release_date_value} {year}"
+            d = f"{data[8].text()} {year}"
             release_date = datetime.strptime(d, "%b %d %Y").date()
         except ValueError as ex:
             release_date = None
 
-        film = Film(
-            title,
-            rank,
+        distributor = data[9].text(strip=True)
+        yield Film(
+            data[1].text(),
+            int(data[0].text()),
             release_date,
             None if not distributor or distributor == "-" else distributor
         )
-
-        yield film
 
 
 async def run(year: int) -> enumerate[Film]:
