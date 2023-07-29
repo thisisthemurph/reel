@@ -1,14 +1,13 @@
-import asyncio
 import os
-from dataclasses import dataclass
-from datetime import datetime
+import asyncio
 from enum import Enum
-
+from datetime import datetime
 from dotenv import load_dotenv
+from dataclasses import dataclass
 from supabase import Client, create_client
 
-import mojoranking_scrape
 from models import Film
+from scrapers import mojoranking_scrape
 
 
 class Table(Enum):
