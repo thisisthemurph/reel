@@ -55,9 +55,17 @@ def __get_film_url(html: HTMLParser, film_title: str) -> str | None:
     Given a film title, searches rottentomatoes for it and returns a
     URL for the movie details page.
     """
+    def search_page_has_results() -> bool:
+        page_heading = html.css_first("h1")
+        return "search__no-results-header" not in page_heading.attrs.get("class", "").split()
+
     def get_title_and_link_from_movie_node(movie: Node) -> tuple[str, str]:
         link_node = movie.css_first("a[data-qa=\"info-name\"]")
         return link_node.text(strip=True), link_node.attrs.get("href")
+
+    if not search_page_has_results():
+        print(f"No search results for movie '{film_title}'")
+        return None
 
     movie_search_results_node = html.css_first("search-page-result[type=\"movie\"]")
     if not movie_search_results_node:
@@ -87,22 +95,19 @@ async def run(film_title: str):
         search_page_html = await __get_html(page, search_url)
 
         movie_url = __get_film_url(search_page_html, film_title)
-        print(movie_url)
         if movie_url is None:
             await browser.close()
             return
 
         film_page_html = await __get_html(page, movie_url)
+        await browser.close()
+
         scores = __get_film_scores(film_page_html, movie_url)
         print(scores)
 
-        await browser.close()
-
-        # return rankings
-
 
 async def main():
-    await run("Die Hardest")
+    await run("Die Hard")
 
 
 if __name__ == "__main__":
