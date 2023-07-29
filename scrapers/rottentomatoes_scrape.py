@@ -76,7 +76,7 @@ def __get_film_url(html: HTMLParser, film_title: str) -> str | None:
     movie_search_results = movie_search_results_node.css("search-page-media-row")
     for movie_node in movie_search_results:
         title, link = get_title_and_link_from_movie_node(movie_node)
-        if title == film_title:
+        if title.upper() == film_title.upper():
             return link
     else:
         # Fall back to the first movie if no movie title matches exactly
@@ -107,7 +107,7 @@ async def run(film_title: str):
 
 
 async def main():
-    await run("Die Hard")
+    await run("die hard")
 
 
 if __name__ == "__main__":
