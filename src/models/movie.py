@@ -1,7 +1,7 @@
 from datetime import date, datetime
 
 
-class Film:
+class Movie:
     def __init__(self, title: str, rank: int, release_date: date, distributor: str):
         self.title = title
         self.rank = rank
@@ -32,7 +32,7 @@ class Film:
         )
 
     def __eq__(self, other):
-        if not isinstance(other, Film):
+        if not isinstance(other, Movie):
             return False
 
         return (
