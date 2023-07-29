@@ -106,7 +106,7 @@ def __get_film_url(html: HTMLParser, film_title: str) -> str | None:
     return None
 
 
-async def run(film_title: str):
+async def run(film_title: str) -> ReviewStats | None:
     search_url = SEARCH_URL.format(search=urllib.parse.quote(film_title))
     async with async_playwright() as p:
         browser = await p.chromium.launch()
@@ -121,8 +121,7 @@ async def run(film_title: str):
         film_page_html = await __get_html(page, movie_url)
         await browser.close()
 
-        scores = __get_film_scores(film_page_html, movie_url)
-        print(scores)
+        return __get_film_scores(film_page_html, movie_url)
 
 
 async def main():
