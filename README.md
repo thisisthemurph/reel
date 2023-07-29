@@ -6,11 +6,9 @@ Reel scrapes the most up-to-date movies and then scrapes reviews for these.
 
 ### TODO
 
-[X] Implement scraping of recent films from Box Office Mojo
-
-[ ] Implement scraping of reviews from Rotten Tomatoes
-
-[ ] Implement scraping of reviews from IMDB
+- [x] Implement scraping of recent films from Box Office Mojo
+- [ ] Implement scraping of reviews from Rotten Tomatoes
+- [ ] Implement scraping of reviews from IMDB
 
 ## Tools used
 
