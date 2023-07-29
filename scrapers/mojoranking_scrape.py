@@ -42,10 +42,9 @@ async def run(year: int) -> enumerate[Film]:
         browser = await p.chromium.launch()
         page = await browser.new_page()
         html = await __get_html(page, mojo_box_office_url)
-        rankings = __parse_html(html, year)
         await browser.close()
 
-        return rankings
+        return __parse_html(html, year)
 
 
 async def main():
