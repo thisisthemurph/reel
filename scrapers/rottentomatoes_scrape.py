@@ -55,7 +55,6 @@ def __get_film_url(html: HTMLParser, film_title: str) -> str | None:
     Given a film title, searches rottentomatoes for it and returns a
     URL for the movie details page.
     """
-
     def get_title_and_link_from_movie_node(movie: Node) -> tuple[str, str]:
         link_node = movie.css_first("a[data-qa=\"info-name\"]")
         return link_node.text(strip=True), link_node.attrs.get("href")
