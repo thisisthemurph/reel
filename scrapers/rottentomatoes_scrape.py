@@ -1,7 +1,7 @@
 import asyncio
 import urllib.parse
 from playwright.async_api import async_playwright, Page
-from selectolax.parser import HTMLParser
+from selectolax.parser import HTMLParser, Node
 
 SEARCH_URL = "https://www.rottentomatoes.com/search?search={search}"
 
@@ -11,8 +11,12 @@ class Review:
         self.score: int | None = None
         self.review_count: int = 0
 
+    def get_score(self, default: str = "-") -> str:
+        """Returns the score as a percentage string, e.g: 12%. If no score, returns default param."""
+        return f"{self.score}%" if self.score else default
+
     def __str__(self):
-        return f"{self.__class__.__name__}(score: {self.score}%, review_count: {self.review_count})"
+        return f"{self.__class__.__name__}(score: {self.get_score()}, review_count: {self.review_count})"
 
 
 class ReviewStats:
@@ -47,24 +51,33 @@ def __get_film_scores(html: HTMLParser, url: str) -> ReviewStats:
 
 
 def __get_film_url(html: HTMLParser, film_title: str) -> str | None:
-    """Given a film title, searches rottentomatoes for it and returns a URL
-    for the movie details page.
     """
-    movie_search_results_elems = html.css("search-page-result[type=\"movie\"]")
-    if not movie_search_results_elems:
-        print(f"No movie search result element found for '{film_title}'")
+    Given a film title, searches rottentomatoes for it and returns a
+    URL for the movie details page.
+    """
+
+    def get_title_and_link_from_movie_node(movie: Node) -> tuple[str, str]:
+        link_node = movie.css_first("a[data-qa=\"info-name\"]")
+        return link_node.text(strip=True), link_node.attrs.get("href")
+
+    movie_search_results_node = html.css_first("search-page-result[type=\"movie\"]")
+    if not movie_search_results_node:
+        print(f"No movie search result node found for '{film_title}'")
         return None
 
-    # TODO: Search the list as the first film is not always a perfect match
-    movie_search_results = movie_search_results_elems[0]
-    movie_links = movie_search_results.css("a[data-qa=\"info-name\"]")
-    if not movie_links:
-        print(f"No films found for search '{film_title}'")
-        return None
+    # Return link for the movie with the matching title
+    movie_search_results = movie_search_results_node.css("search-page-media-row")
+    for movie_node in movie_search_results:
+        title, link = get_title_and_link_from_movie_node(movie_node)
+        if title == film_title:
+            return link
+    else:
+        # Fall back to the first movie if no movie title matches exactly
+        if movie_search_results:
+            __, link = get_title_and_link_from_movie_node(movie_search_results[0])
+            return link
 
-    first_movie_link = movie_links[0]
-    attrs = first_movie_link.attrs
-    return attrs.get("href")
+    return None
 
 
 async def run(film_title: str):
@@ -74,13 +87,14 @@ async def run(film_title: str):
         page = await browser.new_page()
         search_page_html = await __get_html(page, search_url)
 
-        film_url = __get_film_url(search_page_html, film_title)
-        if film_url is None:
+        movie_url = __get_film_url(search_page_html, film_title)
+        print(movie_url)
+        if movie_url is None:
             await browser.close()
             return
 
-        film_page_html = await __get_html(page, film_url)
-        scores = __get_film_scores(film_page_html, film_url)
+        film_page_html = await __get_html(page, movie_url)
+        scores = __get_film_scores(film_page_html, movie_url)
         print(scores)
 
         await browser.close()
@@ -89,7 +103,7 @@ async def run(film_title: str):
 
 
 async def main():
-    await run("Die Hard")
+    await run("Die Hardest")
 
 
 if __name__ == "__main__":
