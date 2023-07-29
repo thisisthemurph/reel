@@ -45,11 +45,13 @@ def get_film_by_title(title: str, supabase: Client) -> Film | None:
     return Film.from_dict(film.data[0]) if film.data else None
 
 
+def make_supabase_config() -> SupabaseConfig:
+    return SupabaseConfig(url=os.getenv("SUPABASE_URL"), key=os.getenv("SUPABASE_KEY"))
+
+
 async def main():
     load_dotenv()
-    supabase_config = SupabaseConfig(
-        os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY")
-    )
+    supabase_config = make_supabase_config()
     supabase: Client = create_client(supabase_config.url, supabase_config.key)
     await get_film_rankings(supabase)
 
