@@ -49,8 +49,8 @@ async def run(year: int) -> enumerate[Movie]:
 
 
 async def main():
-    for film in await run(year=datetime.now().year):
-        print(film)
+    for movie in await run(year=datetime.now().year):
+        print(movie)
 
 
 if __name__ == "__main__":

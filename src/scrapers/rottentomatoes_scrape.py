@@ -36,8 +36,8 @@ async def __get_html(page: Page, url: str) -> HTMLParser:
     return html
 
 
-def __get_film_scores(html: HTMLParser, url: str) -> ReviewStats:
-    """Parses the rottentomatoes scores from the film details page"""
+def __get_movie_scores(html: HTMLParser, url: str) -> ReviewStats:
+    """Parses the rottentomatoes scores from the movie details page"""
     stats = ReviewStats()
     score_board_elem = html.css_first("score-board")
     if not score_board_elem:
@@ -68,8 +68,8 @@ def __get_film_scores(html: HTMLParser, url: str) -> ReviewStats:
     return stats
 
 
-def __get_film_url(html: HTMLParser, film_title: str) -> str | None:
-    """Given a film title, searches rottentomatoes for it and returns a URL for the movie details page."""
+def __get_movie_url(html: HTMLParser, movie_title: str) -> str | None:
+    """Given a movie title, searches rottentomatoes for it and returns a URL for the movie details page."""
 
     def search_page_has_results() -> bool:
         page_heading = html.css_first("h1")
@@ -83,19 +83,19 @@ def __get_film_url(html: HTMLParser, film_title: str) -> str | None:
         return link_node.text(strip=True), link_node.attrs.get("href")
 
     if not search_page_has_results():
-        print(f"No search results for movie '{film_title}'")
+        print(f"No search results for movie '{movie_title}'")
         return None
 
     movie_search_results_node = html.css_first('search-page-result[type="movie"]')
     if not movie_search_results_node:
-        print(f"No movie search result node found for '{film_title}'")
+        print(f"No movie search result node found for '{movie_title}'")
         return None
 
     # Return link for the movie with the matching title
     movie_search_results = movie_search_results_node.css("search-page-media-row")
     for movie_node in movie_search_results:
         title, link = get_title_and_link_from_movie_node(movie_node)
-        if title.upper() == film_title.upper():
+        if title.upper() == movie_title.upper():
             return link
     else:
         # Fall back to the first movie if no movie title matches exactly
@@ -106,22 +106,22 @@ def __get_film_url(html: HTMLParser, film_title: str) -> str | None:
     return None
 
 
-async def run(film_title: str) -> ReviewStats | None:
-    search_url = SEARCH_URL.format(search=urllib.parse.quote(film_title))
+async def run(movie_title: str) -> ReviewStats | None:
+    search_url = SEARCH_URL.format(search=urllib.parse.quote(movie_title))
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         page = await browser.new_page()
         search_page_html = await __get_html(page, search_url)
 
-        movie_url = __get_film_url(search_page_html, film_title)
+        movie_url = __get_movie_url(search_page_html, movie_title)
         if movie_url is None:
             await browser.close()
             return
 
-        film_page_html = await __get_html(page, movie_url)
+        movie_page_html = await __get_html(page, movie_url)
         await browser.close()
 
-        return __get_film_scores(film_page_html, movie_url)
+        return __get_movie_scores(movie_page_html, movie_url)
 
 
 async def main():

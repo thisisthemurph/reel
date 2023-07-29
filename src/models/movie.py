@@ -14,13 +14,13 @@ class Movie:
     @classmethod
     def from_dict(cls, d):
         release_date = datetime.strptime(d["release_date"], "%Y-%m-%d").date()
-        film = cls(d["title"], int(d["rank"]), release_date, d["distributor"])
+        movie = cls(d["title"], int(d["rank"]), release_date, d["distributor"])
 
-        # If the film has been fetched from Supabase, it will have additional properties
-        film.id = d["id"] if "id" in d else None
-        film.created_at = d["created_at"] if "created_at" in d else None
+        # If the movie has been fetched from Supabase, it will have additional properties
+        movie.id = d["id"] if "id" in d else None
+        movie.created_at = d["created_at"] if "created_at" in d else None
 
-        return film
+        return movie
 
     @property
     def supabase_dict(self):
