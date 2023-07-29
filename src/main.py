@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from supabase import Client, create_client
 
 from models import Film
-from scrapers import mojoranking_scrape
+from src.scrapers import mojoranking_scrape
 
 
 class Table(Enum):

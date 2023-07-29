@@ -3,7 +3,7 @@ from datetime import datetime
 from playwright.async_api import async_playwright, Page
 from selectolax.parser import HTMLParser
 
-from models.film import Film
+from models import Film
 
 BOX_OFFICE_MOJO_URL = "https://www.boxofficemojo.com/year/{year}/"
 
