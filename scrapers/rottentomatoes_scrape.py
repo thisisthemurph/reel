@@ -9,7 +9,7 @@ SEARCH_URL = "https://www.rottentomatoes.com/search?search={search}"
 class Review:
     def __init__(self):
         self.score: int | None = None
-        self.review_count: int = 0
+        self.review_count: str = "0"
 
     def get_score(self, default: str = "-") -> str:
         """Returns the score as a percentage string, e.g: 12%. If no score, returns default param."""
@@ -44,17 +44,25 @@ def __get_film_scores(html: HTMLParser, url: str) -> ReviewStats:
 
     audience_score_attr = score_board_elem.attrs.get("audiencescore")
     tomatometer_score_attr = score_board_elem.attrs.get("tomatometerscore")
+    audience_review_count = score_board_elem.css_first("a[data-qa=\"audience-rating-count\"]").text(strip=True).split()
+    tomatometer_review_count = (score_board_elem.css_first("a[data-qa=\"tomatometer-review-count\"]")
+                                .text(strip=True)
+                                .split())
 
     stats.critic.score = int(tomatometer_score_attr) if tomatometer_score_attr else None
     stats.audience.score = int(audience_score_attr) if audience_score_attr else None
+
+    if audience_review_count:
+        stats.audience.review_count = audience_review_count[0]
+
+    if tomatometer_review_count:
+        stats.critic.review_count = tomatometer_review_count[0]
+
     return stats
 
 
 def __get_film_url(html: HTMLParser, film_title: str) -> str | None:
-    """
-    Given a film title, searches rottentomatoes for it and returns a
-    URL for the movie details page.
-    """
+    """Given a film title, searches rottentomatoes for it and returns a URL for the movie details page."""
     def search_page_has_results() -> bool:
         page_heading = html.css_first("h1")
         return "search__no-results-header" not in page_heading.attrs.get("class", "").split()
