@@ -49,12 +49,11 @@ def __get_film_scores(html: HTMLParser, url: str) -> ReviewStats:
                                 .text(strip=True)
                                 .split())
 
-    stats.critic.score = int(tomatometer_score_attr) if tomatometer_score_attr else None
     stats.audience.score = int(audience_score_attr) if audience_score_attr else None
-
     if audience_review_count:
         stats.audience.review_count = audience_review_count[0]
 
+    stats.critic.score = int(tomatometer_score_attr) if tomatometer_score_attr else None
     if tomatometer_review_count:
         stats.critic.review_count = tomatometer_review_count[0]
 
