@@ -32,7 +32,7 @@ def __parse_html(html: HTMLParser, year: int) -> enumerate[Film]:
             data[1].text(),
             int(data[0].text()),
             release_date,
-            None if not distributor or distributor == "-" else distributor
+            None if not distributor or distributor == "-" else distributor,
         )
 
 

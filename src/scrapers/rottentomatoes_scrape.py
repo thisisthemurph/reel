@@ -25,7 +25,9 @@ class ReviewStats:
         self.audience = Review()
 
     def __str__(self):
-        return f"{self.__class__.__name__}(critic={self.critic}, audience={self.audience})"
+        return (
+            f"{self.__class__.__name__}(critic={self.critic}, audience={self.audience})"
+        )
 
 
 async def __get_html(page: Page, url: str) -> HTMLParser:
@@ -44,10 +46,16 @@ def __get_film_scores(html: HTMLParser, url: str) -> ReviewStats:
 
     audience_score_attr = score_board_elem.attrs.get("audiencescore")
     tomatometer_score_attr = score_board_elem.attrs.get("tomatometerscore")
-    audience_review_count = score_board_elem.css_first("a[data-qa=\"audience-rating-count\"]").text(strip=True).split()
-    tomatometer_review_count = (score_board_elem.css_first("a[data-qa=\"tomatometer-review-count\"]")
-                                .text(strip=True)
-                                .split())
+    audience_review_count = (
+        score_board_elem.css_first('a[data-qa="audience-rating-count"]')
+        .text(strip=True)
+        .split()
+    )
+    tomatometer_review_count = (
+        score_board_elem.css_first('a[data-qa="tomatometer-review-count"]')
+        .text(strip=True)
+        .split()
+    )
 
     stats.audience.score = int(audience_score_attr) if audience_score_attr else None
     if audience_review_count:
@@ -62,19 +70,23 @@ def __get_film_scores(html: HTMLParser, url: str) -> ReviewStats:
 
 def __get_film_url(html: HTMLParser, film_title: str) -> str | None:
     """Given a film title, searches rottentomatoes for it and returns a URL for the movie details page."""
+
     def search_page_has_results() -> bool:
         page_heading = html.css_first("h1")
-        return "search__no-results-header" not in page_heading.attrs.get("class", "").split()
+        return (
+            "search__no-results-header"
+            not in page_heading.attrs.get("class", "").split()
+        )
 
     def get_title_and_link_from_movie_node(movie: Node) -> tuple[str, str]:
-        link_node = movie.css_first("a[data-qa=\"info-name\"]")
+        link_node = movie.css_first('a[data-qa="info-name"]')
         return link_node.text(strip=True), link_node.attrs.get("href")
 
     if not search_page_has_results():
         print(f"No search results for movie '{film_title}'")
         return None
 
-    movie_search_results_node = html.css_first("search-page-result[type=\"movie\"]")
+    movie_search_results_node = html.css_first('search-page-result[type="movie"]')
     if not movie_search_results_node:
         print(f"No movie search result node found for '{film_title}'")
         return None

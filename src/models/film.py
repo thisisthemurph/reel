@@ -35,8 +35,9 @@ class Film:
         if not isinstance(other, Film):
             return False
 
-        return (self.title == other.title
-                and self.rank == other.rank
-                and self.release_date == other.release_date
-                and self.distributor == other.distributor
-                )
+        return (
+            self.title == other.title
+            and self.rank == other.rank
+            and self.release_date == other.release_date
+            and self.distributor == other.distributor
+        )
