@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from supabase import Client, create_client
 
 from src.repositories import MoviesRepo
-from src.scrapers import mojoranking_scrape
+from src.scrapers.boxofficemojo_movie_list_scraper import BoxOfficeMojoMovieListScraper
 
 
 @dataclass
@@ -15,9 +15,11 @@ class SupabaseConfig:
     key: str
 
 
-async def scrape_recent_movies(movies_repo: MoviesRepo):
+async def scrape_recent_movies(
+    movies_repo: MoviesRepo, scraper: BoxOfficeMojoMovieListScraper
+):
     """Scrapes recent movies and adds/updates the database with the results."""
-    for movie in await mojoranking_scrape.run(year=datetime.now().year):
+    for movie in await scraper.run(year=datetime.now().year):
         existing_movie = movies_repo.get_by_title(movie.title)
         if existing_movie is None:
             movies_repo.add(movie)
@@ -29,17 +31,14 @@ def make_supabase_config() -> SupabaseConfig:
     return SupabaseConfig(url=os.getenv("SUPABASE_URL"), key=os.getenv("SUPABASE_KEY"))
 
 
-async def run(movies_repo: MoviesRepo):
-    await scrape_recent_movies(movies_repo)
-
-
 async def main():
     load_dotenv()
     supabase_config = make_supabase_config()
     supabase: Client = create_client(supabase_config.url, supabase_config.key)
     movies_repo = MoviesRepo(supabase)
+    scraper = BoxOfficeMojoMovieListScraper()
 
-    await run(movies_repo)
+    await scrape_recent_movies(movies_repo, scraper)
 
 
 if __name__ == "__main__":
