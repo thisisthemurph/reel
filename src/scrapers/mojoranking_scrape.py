@@ -1,4 +1,3 @@
-import asyncio
 from datetime import datetime
 from playwright.async_api import async_playwright, Page
 from selectolax.parser import HTMLParser
@@ -44,13 +43,3 @@ class BoxOfficeMojoMovieListScraper(Scraper):
             await browser.close()
 
             return self.__parse_html(html, year)
-
-
-async def main():
-    scraper = BoxOfficeMojoMovieListScraper()
-    for movie in await scraper.run(year=datetime.now().year):
-        print(movie)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

@@ -1,4 +1,3 @@
-import asyncio
 import urllib.parse
 from playwright.async_api import async_playwright
 from selectolax.parser import HTMLParser, Node
@@ -99,12 +98,3 @@ class RottenTomatoesMovieReviewScraper(Scraper):
             await browser.close()
 
             return self.__parse_movie_scores(movie_page_html, movie_url)
-
-
-async def main():
-    scraper = RottenTomatoesMovieReviewScraper()
-    print(await scraper.run("die hard"))
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
