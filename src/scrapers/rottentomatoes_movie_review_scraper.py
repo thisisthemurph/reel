@@ -2,6 +2,7 @@ import urllib.parse
 from playwright.async_api import async_playwright
 from selectolax.parser import HTMLParser, Node
 
+from src.models import Movie
 from src.models.movie_review import MovieReviewStats
 from src.scrapers.scraper import Scraper
 
@@ -12,28 +13,35 @@ class RottenTomatoesMovieReviewScraper(Scraper):
     @staticmethod
     def __parse_movie_scores(html: HTMLParser, url: str) -> MovieReviewStats:
         """Parses the rottentomatoes scores from the movie details page"""
-        stats = MovieReviewStats()
+        stats = MovieReviewStats("rottentomatoes")
         score_board_elem = html.css_first("score-board")
         if not score_board_elem:
             print(f"No score-board element at '{url}'")
             return stats
 
         audience_score_attr = score_board_elem.attrs.get("audiencescore")
+        audience_rating_count_elem = score_board_elem.css_first(
+            'a[data-qa="audience-rating-count"]'
+        )
+        audience_rating_count = (
+            audience_rating_count_elem.text(strip=True).split()
+            if audience_rating_count_elem
+            else None
+        )
+
         tomatometer_score_attr = score_board_elem.attrs.get("tomatometerscore")
-        audience_review_count = (
-            score_board_elem.css_first('a[data-qa="audience-rating-count"]')
-            .text(strip=True)
-            .split()
+        tomatometer_review_count_elem = score_board_elem.css_first(
+            'a[data-qa="tomatometer-review-count"]'
         )
         tomatometer_review_count = (
-            score_board_elem.css_first('a[data-qa="tomatometer-review-count"]')
-            .text(strip=True)
-            .split()
+            tomatometer_review_count_elem.text(strip=True)
+            if tomatometer_review_count_elem
+            else None
         )
 
         stats.audience.score = int(audience_score_attr) if audience_score_attr else None
-        if audience_review_count:
-            stats.audience.review_count = audience_review_count[0]
+        if audience_rating_count:
+            stats.audience.review_count = audience_rating_count[0]
 
         stats.critic.score = (
             int(tomatometer_score_attr) if tomatometer_score_attr else None
@@ -82,19 +90,29 @@ class RottenTomatoesMovieReviewScraper(Scraper):
 
         return None
 
-    async def run(self, movie_title: str) -> MovieReviewStats | None:
-        search_url = SEARCH_URL.format(search=urllib.parse.quote(movie_title))
+    async def run(self, movies: list[Movie]) -> list[MovieReviewStats]:
+        stat_results: list[MovieReviewStats] = []
         async with async_playwright() as p:
             browser = await p.chromium.launch()
             page = await browser.new_page()
-            search_page_html = await self._get_html(page, search_url)
 
-            movie_url = self.__get_movie_url(search_page_html, movie_title)
-            if movie_url is None:
-                await browser.close()
-                return
+            for movie in movies:
+                search_url = SEARCH_URL.format(search=urllib.parse.quote(movie.title))
+                search_page_html = await self._get_html(page, search_url)
+                if search_page_html is None:
+                    continue
 
-            movie_page_html = await self._get_html(page, movie_url)
+                movie_url = self.__get_movie_url(search_page_html, movie.title)
+                if movie_url is None:
+                    continue
+
+                movie_page_html = await self._get_html(page, movie_url)
+                if movie_page_html is None:
+                    continue
+
+                stats = self.__parse_movie_scores(movie_page_html, movie_url)
+                stats.movie_id = movie.id
+                stat_results.append(stats)
+
             await browser.close()
-
-            return self.__parse_movie_scores(movie_page_html, movie_url)
+        return stat_results

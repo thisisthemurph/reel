@@ -15,6 +15,10 @@ class MoviesRepo:
             "id", movie_id
         ).execute()
 
+    def all(self) -> list[Movie]:
+        results = self.supabase.table(Table.Movies).select("*").execute()
+        return [Movie.from_dict(m) for m in results.data]
+
     def get_by_title(self, title: str) -> Movie | None:
         movie = (
             self.supabase.table(Table.Movies)
