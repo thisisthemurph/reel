@@ -2,21 +2,24 @@ import urllib.parse
 from playwright.async_api import async_playwright
 from selectolax.parser import HTMLParser, Node
 
+from . import HTMLScraper
 from src.models import Movie
 from src.models.movie_review import MovieReviewStats
-from src.scrapers.scraper import Scraper
 
 SEARCH_URL = "https://www.rottentomatoes.com/search?search={search}"
 
 
-class RottenTomatoesMovieReviewScraper(Scraper):
-    @staticmethod
-    def __parse_movie_scores(html: HTMLParser, url: str) -> MovieReviewStats:
+class RottenTomatoesMovieReviewScraper:
+    def __init__(self, scraper: HTMLScraper):
+        self.scraper = scraper
+        self.logger = scraper.logger
+
+    def __parse_movie_scores(self, html: HTMLParser, url: str) -> MovieReviewStats:
         """Parses the rottentomatoes scores from the movie details page"""
         stats = MovieReviewStats("rottentomatoes")
         score_board_elem = html.css_first("score-board")
         if not score_board_elem:
-            print(f"No score-board element at '{url}'")
+            self.logger.debug(f"No score-board element at '{url}'")
             return stats
 
         audience_score_attr = score_board_elem.attrs.get("audiencescore")
@@ -68,12 +71,12 @@ class RottenTomatoesMovieReviewScraper(Scraper):
         """Given a movie title, searches rottentomatoes for it and returns a
         URL for the movie details page."""
         if not self.__search_page_has_results(html):
-            print(f"No search results for movie '{movie_title}'")
+            self.logger.debug(f"No search results for movie '{movie_title}'")
             return None
 
         movie_search_results_node = html.css_first('search-page-result[type="movie"]')
         if not movie_search_results_node:
-            print(f"No movie search result node found for '{movie_title}'")
+            self.logger.debug(f"No movie search result node found for '{movie_title}'")
             return None
 
         # Return link for the movie with the matching title
@@ -84,10 +87,14 @@ class RottenTomatoesMovieReviewScraper(Scraper):
                 return movie_url
         else:
             # Fall back to the first movie if no movie title matches exactly
+            self.logger.debug(
+                f"Match not found for {movie_title}, falling back to first movie"
+            )
             if movie_search_results:
                 __, movie_url = self.__get_title_and_link(movie_search_results[0])
                 return movie_url
 
+        self.logger.debug("Fallback failed, movie list is empty")
         return None
 
     async def run(self, movies: list[Movie]) -> list[MovieReviewStats]:
@@ -98,7 +105,7 @@ class RottenTomatoesMovieReviewScraper(Scraper):
 
             for movie in movies:
                 search_url = SEARCH_URL.format(search=urllib.parse.quote(movie.title))
-                search_page_html = await self._get_html(page, search_url)
+                search_page_html = await self.scraper.get_html(page, search_url)
                 if search_page_html is None:
                     continue
 
@@ -106,7 +113,7 @@ class RottenTomatoesMovieReviewScraper(Scraper):
                 if movie_url is None:
                     continue
 
-                movie_page_html = await self._get_html(page, movie_url)
+                movie_page_html = await self.scraper.get_html(page, movie_url)
                 if movie_page_html is None:
                     continue
 
