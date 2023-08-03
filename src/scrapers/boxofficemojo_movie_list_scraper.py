@@ -1,20 +1,21 @@
 from datetime import datetime
-from playwright.async_api import async_playwright, Page
+
+import httpx
 from selectolax.parser import HTMLParser
 
-from . import HTMLScraper
+from . import HtmlParserProtocol
 from src.models import Movie
 
 BOX_OFFICE_MOJO_URL = "https://www.boxofficemojo.com/year/{year}/"
 
 
 class BoxOfficeMojoMovieListScraper:
-    def __init__(self, scraper: HTMLScraper):
+    def __init__(self, scraper: HtmlParserProtocol):
         self.scraper = scraper
         self.logger = scraper.logger
 
-    def __parse_html(self, html: HTMLParser, year: int) -> enumerate[Movie]:
-        ranking_table = html.css("tbody")[1]
+    def __parse_html(self, parser: HTMLParser, year: int) -> enumerate[Movie]:
+        ranking_table = parser.css_first("tbody")
         for row in ranking_table.css("tr"):
             data = row.css("td")
             if not data:
@@ -33,17 +34,11 @@ class BoxOfficeMojoMovieListScraper:
                 title=data[1].text(strip=True),
                 rank=int(data[0].text(strip=True)),
                 release_date=release_date,
-                distributor=None
-                if not distributor or distributor == "-"
-                else distributor,
+                distributor=None if not distributor or distributor == "-" else distributor,
             )
 
     async def run(self, year: int) -> enumerate[Movie]:
         mojo_box_office_url = BOX_OFFICE_MOJO_URL.format(year=year)
-        async with async_playwright() as p:
-            browser = await p.chromium.launch()
-            page = await browser.new_page()
-            html = await self.scraper.get_html(page, mojo_box_office_url)
-            await browser.close()
-
-            return self.__parse_html(html, year)
+        async with httpx.AsyncClient() as client:
+            parser = await self.scraper.get_html_parser(client, mojo_box_office_url)
+            return self.__parse_html(parser, year)
