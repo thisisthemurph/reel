@@ -11,6 +11,9 @@ class Movie:
         self.id: int | None = None
         self.created_at = None
 
+    def __repr__(self):
+        return f"Movie(title='{self.title}')"
+
     @classmethod
     def from_dict(cls, d):
         release_date = datetime.strptime(d["release_date"], "%Y-%m-%d").date()

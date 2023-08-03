@@ -22,7 +22,7 @@ class MovieReview:
         """Returns the score as a percentage string, e.g: 12%. If no score, returns default param."""
         return f"{self.score}%" if self.score else default
 
-    def __str__(self):
+    def __repr__(self):
         return f"{self.__class__.__name__}(score: {self.get_score()}, review_count: {self.review_count})"
 
 
@@ -51,7 +51,5 @@ class MovieReviewStats:
 
         return review
 
-    def __str__(self):
-        return (
-            f"{self.__class__.__name__}(critic={self.critic}, audience={self.audience})"
-        )
+    def __repr__(self):
+        return f"{self.__class__.__name__}(critic={self.critic}, audience={self.audience})"

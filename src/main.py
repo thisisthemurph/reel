@@ -6,7 +6,7 @@ from supabase import create_client
 
 from src.logger import make_logger
 from src.repositories import MoviesRepo, ReviewsRepo
-from src.scrapers import HTMLScraper
+from src.scrapers import HtmlParserProtocol
 from src.scrapers.boxofficemojo_movie_list_scraper import BoxOfficeMojoMovieListScraper
 from src.scrapers.rottentomatoes_movie_review_scraper import (
     RottenTomatoesMovieReviewScraper,
@@ -15,9 +15,7 @@ from src.scrapers.rottentomatoes_movie_review_scraper import (
 
 async def scrape_recent_movies(movies_repo: MoviesRepo):
     """Scrapes recent movies and adds/updates the database with the results."""
-    logger = make_logger("scrape_recent_movies")
-    html_scraper = HTMLScraper(logger)
-    scraper = BoxOfficeMojoMovieListScraper(html_scraper)
+    scraper = BoxOfficeMojoMovieListScraper(HtmlParserProtocol.httpx_scraper())
     for movie in await scraper.run(year=datetime.now().year):
         existing_movie = movies_repo.get_by_title(movie.title)
         if existing_movie is None:
@@ -28,10 +26,8 @@ async def scrape_recent_movies(movies_repo: MoviesRepo):
 
 async def scrape_movie_reviews(movies_repo: MoviesRepo, reviews_repo: ReviewsRepo):
     """Scrapes reviews from rotten tomatoes for all movies in the database."""
-    logger = make_logger("scrape_movie_reviews")
     movies = movies_repo.all()
-    html_scraper = HTMLScraper(logger)
-    scraper = RottenTomatoesMovieReviewScraper(html_scraper)
+    scraper = RottenTomatoesMovieReviewScraper(HtmlParserProtocol.httpx_scraper())
     for review in await scraper.run(movies):
         reviews_repo.add(review)
 
