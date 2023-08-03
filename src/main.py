@@ -42,7 +42,7 @@ async def main():
     reviews_repo = ReviewsRepo(supabase)
 
     await scrape_recent_movies(movies_repo)
-    # await scrape_movie_reviews(movies_repo, reviews_repo)
+    await scrape_movie_reviews(movies_repo, reviews_repo)
 
     logger.debug(f"Finished executing at {datetime.now().isoformat()}")
 
