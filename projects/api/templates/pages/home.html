@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Reel home page{% endblock %}
+
+{% block heading %}Highest reviewed movies{% endblock %}
+
+{% block content %}
+<section>
+    {% for movie in movies %}
+        <div>
+            <p>{{ movie["title"] }}</p>
+            <p>{{ movie["distributor"] }}</p>
+           <hr />
+        </div>
+    {% endfor %}
+</section>
+{% endblock %}

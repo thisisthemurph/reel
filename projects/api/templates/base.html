@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Reel{% endblock %}</title>
+</head>
+<body>
+    {% include "partials/header.html" ignore missing %}
+    <main class="page">
+        <h2>{% block heading %}Reel heading{% endblock %}</h2>
+
+        {% block content %}
+        {% endblock %}
+    </main>
+</body>
+</html>
