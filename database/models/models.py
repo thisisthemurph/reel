@@ -18,16 +18,6 @@ class Movie(Model):
     class Meta:
         table = "movies"
 
-    def to_dict(self):
-        return dict(
-            id=self.id,
-            title=self.title,
-            rank=self.rank,
-            release_date=self.release_date,
-            distributor=self.distributor,
-            created_at=self.created_at,
-        )
-
     def __repr__(self):
         return f"Movie(title={self.title})"
 

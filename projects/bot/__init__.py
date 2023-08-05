@@ -1,3 +1,4 @@
+import logging
 from logging import Logger
 from typing import Protocol
 
@@ -6,31 +7,19 @@ from httpx import AsyncClient
 from playwright.async_api import Page
 from selectolax.parser import HTMLParser
 
-from libs.supalogger import make_logger
-
 
 class HtmlParserProtocol(Protocol):
     @property
     def logger(self) -> Logger:
         ...
 
-    @classmethod
-    def httpx_scraper(cls):
-        logger = make_logger("HttpxHtmlScraper")
-        return HttpxHtmlParser(logger)
-
-    @classmethod
-    def playwright_scraper(cls):
-        logger = make_logger("PlaywrightHTMLScraper")
-        return PlaywrightHtmlParser(logger)
-
     async def get_html_parser(self, client, url: str):
         ...
 
 
 class PlaywrightHtmlParser:
-    def __init__(self, logger: Logger):
-        self.logger = logger
+    def __init__(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     async def get_html_parser(self, page: Page, url: str):
         try:
@@ -42,8 +31,8 @@ class PlaywrightHtmlParser:
 
 
 class HttpxHtmlParser:
-    def __init__(self, logger: Logger):
-        self.logger = logger
+    def __init__(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     async def get_html_parser(self, client: AsyncClient, url: str):
         try:
