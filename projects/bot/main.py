@@ -7,9 +7,8 @@ from dotenv import load_dotenv
 
 from database import database as db
 from database.models import Movie
-from projects.bot import HtmlParserProtocol, HttpxHtmlParser
-from projects.bot.boxofficemojo_movie_list_scraper import BoxOfficeMojoMovieListScraper
-from projects.bot.rottentomatoes_movie_review_scraper import RottenTomatoesMovieReviewScraper
+from projects.bot import HttpxHtmlParser
+from projects.bot.scrapers import BoxOfficeMojoMovieListScraper, RottenTomatoesMovieReviewScraper
 
 
 async def scrape_recent_movies():
