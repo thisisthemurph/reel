@@ -53,7 +53,9 @@ class Review(Model):
         table = "reviews"
 
     def __repr__(self):
-        return f"Review(site={self.site})"
+        return (
+            f"Review(site={self.site}, audience={self.audience_score}, critic={self.critic_score})"
+        )
 
     def __str__(self):
         return self.__repr__()
