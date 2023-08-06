@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {{ movie.title }}
+{% endblock %}
+
+{% block content %}
+<section class="container">
+    {% if movie is none %}
+        {% with message='It looks like this movie does not exist in our database, please try searching for the movie you are interested in.' %}
+            {% include 'partials/page-error.html' %}
+        {% endwith %}
+    {% else %}
+        <h2 class="mb-6">{{ movie.title }}</h2>
+        {% if movie.reviews|length >= 1 %}
+            <h3 class="mb-2">Reviews</h3>
+            {% for review in movie.reviews %}
+            <section class="py-4 border-b border-b-slate-300">
+                <h4 class="mb-2 text-red-400">{{ review.site|upper }}</h4>
+                <div class="grid grid-rows-2 grid-cols-4 gap-2">
+                    <p class="col-span-2 tracking-wide">Audience</p>
+                    <p class="font-bold">{{ review.audience_score }}%</p>
+                    <p>{{ review.audience_count }} reviews</p>
+
+                    <p class="col-span-2 tracking-wide">Critic</p>
+                    <p class="font-bold">{{ review.critic_score }}%</p>
+                    <p>{{ review.critic_count|lower }}</p>
+                </div>
+            </section>
+            {% endfor %}
+        {% else %}
+            <p>This movie does not have any reviews</p>
+        {% endif %}
+    {% endif %}
+</section>
+{% endblock %}

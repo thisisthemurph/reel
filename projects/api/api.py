@@ -44,6 +44,16 @@ async def index(request: Request):
     return templates.TemplateResponse("pages/home.html", ctx)
 
 
+@api.get("/m/{movie_id}", response_class=HTMLResponse)
+async def movie_page(request: Request, movie_id: int):
+    movie = await Movie.filter(id=movie_id).first()
+    if movie:
+        await movie.fetch_related("reviews")
+
+    ctx = dict(request=request, movie=movie)
+    return templates.TemplateResponse("pages/movie.html", ctx)
+
+
 if __name__ == "__main__":
     asyncio.run(init())
 

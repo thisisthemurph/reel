@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Reel home page{% endblock %}
-
-{% block heading %}{% endblock %}
+{% block title %}Home page{% endblock %}
 
 {% block content %}
 <section class="container">
@@ -11,7 +9,7 @@
 
     <section class="flex flex-col">
     {% for movie in movies %}
-        <a href="#" class="group flex justify-between py-4 border-b border-b-slate-300">
+        <a href="m/{{ movie.id }}" class="group flex justify-between py-4 border-b border-b-slate-300">
             <p class="text-md tracking-wide group-hover:text-yellow-600">{{ movie.title }}</p>
             <p class="font-semibold">{{ movie.reviews[0].audience_score }}%</p>
         </a>

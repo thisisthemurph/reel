@@ -10,8 +10,12 @@ h2 {
     @apply text-xl text-yellow-600 tracking-wider;
 }
 
-h2.compact {
-    @apply: text-red-500;
+h3 {
+    @apply text-xl text-slate-700 tracking-wider;
+}
+
+h4 {
+    @apply text-md text-slate-700 tracking-wider;
 }
 
 p.subtitle {
