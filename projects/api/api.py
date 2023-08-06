@@ -1,77 +1,55 @@
+import os
 import asyncio
-import datetime
+from datetime import datetime, timedelta
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from tortoise import Tortoise
 from tortoise.contrib.fastapi import register_tortoise
+from tortoise.expressions import Q
 
-from database.models import Movie, Review
-
-MODELS_PATHS = ["database.models"]
-DATABASE_URL = "postgres://postgres:GreenAli3n2001@localhost:5432/reel"
+from database import database as db
+from database.models import Movie
 
 api = FastAPI()
 templates = Jinja2Templates(directory="projects/api/templates")
 
+load_dotenv()
+database_url = os.getenv("DATABASE_URL")
+
 
 async def init():
-    Tortoise.init_models(MODELS_PATHS, "models")
-    await Tortoise.init(
-        db_url=DATABASE_URL,
-        modules=dict(models=MODELS_PATHS),
-    )
-
-    await Tortoise.generate_schemas()
-
-    register_tortoise(
-        api,
-        db_url=DATABASE_URL,
-        modules={"models": MODELS_PATHS},
-        generate_schemas=True,
-        add_exception_handlers=True,
-    )
-
-    # await test_insert_movie()
-    # await test_create_review()
-    await loop_over_movies()
+    await db.init_database(database_url)
 
 
 @api.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    r = await Movie.all().limit(5)
-    ctx = dict(request=request, movies=r)
+    delta = datetime.now().date() - timedelta(days=30)
+    movies_by_review_and_release_date = (
+        await Movie.filter(release_date__gte=delta)
+        .prefetch_related("reviews")
+        .order_by("-reviews__audience_score", "-release_date")
+    )
+
+    # TODO: Figure out how to force tortoise-orm to use an INNER JOIN
+    top_movies: list[Movie] = []
+    for movie in movies_by_review_and_release_date[:5]:
+        if len(movie.reviews):
+            top_movies.append(movie)
+
+    ctx = dict(request=request, movies=top_movies)
     return templates.TemplateResponse("pages/home.html", ctx)
-
-
-async def test_insert_movie():
-    movie = Movie(
-        title="die hard", rank=1, release_date=datetime.datetime.now().date(), distributor="Mike"
-    )
-    await movie.save()
-
-
-async def test_create_review():
-    movie = await Movie.get(id=1).prefetch_related("reviews")
-    await Review.create(
-        site="tomatomater",
-        audience_score=88,
-        audience_count="9",
-        critic_score=14,
-        critic_count="4",
-        movie=movie,
-    )
-
-
-async def loop_over_movies():
-    movies = await Movie.all().prefetch_related("reviews")
-    for movie in movies:
-        print(movie)
-        async for review in movie.reviews:
-            print("\t", review)
 
 
 if __name__ == "__main__":
     asyncio.run(init())
+
+register_tortoise(
+    api,
+    db_url=database_url,
+    modules={"models": db.MODELS_PATHS},
+    generate_schemas=True,
+    add_exception_handlers=True,
+)
