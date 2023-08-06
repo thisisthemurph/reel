@@ -7,13 +7,8 @@
     <h2>This Month's Top Picks</h2>
     <p class="subtitle">Check out the highest reviewed movies in the last 30 days.</p>
 
-    <section class="flex flex-col">
-    {% for movie in movies %}
-        <a href="m/{{ movie.id }}" class="group flex justify-between py-4 border-b border-b-slate-300">
-            <p class="text-md tracking-wide group-hover:text-yellow-600">{{ movie.title }}</p>
-            <p class="font-semibold">{{ movie.reviews[0].audience_score }}%</p>
-        </a>
-    {% endfor %}
-    </section>
+    {% with movies=movies %}
+        {% include 'partials/movie-list.html' %}
+    {% endwith %}
 </section>
 {% endblock %}
