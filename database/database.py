@@ -1,6 +1,6 @@
 from tortoise import Tortoise
 
-MODELS_PATHS = ["database.models"]
+from database import MODELS_PATHS
 
 
 async def init_database(database_url: str):
