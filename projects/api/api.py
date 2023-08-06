@@ -1,6 +1,5 @@
 import os
 import asyncio
-from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -8,10 +7,9 @@ from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from tortoise.contrib.fastapi import register_tortoise
-from tortoise.expressions import Q
 
 from database import database as db
-from database.models import Movie
+from database.models import Movie, Review
 
 api = FastAPI()
 templates = Jinja2Templates(directory="projects/api/templates")
@@ -26,18 +24,16 @@ async def init():
 
 @api.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    delta = datetime.now().date() - timedelta(days=30)
-    movies_by_review_and_release_date = (
-        await Movie.filter(release_date__gte=delta)
-        .prefetch_related("reviews")
-        .order_by("-reviews__audience_score", "-release_date")
+    # TODO: Figure out how to force tortoise-orm to use an INNER JOIN and remove raw SQL
+    top_movies: list[Movie] = await Movie.raw(
+        """SELECT m.*, r.audience_score, r.audience_count
+        FROM movies m
+        INNER JOIN reviews r
+            ON m.id = r.movie_id
+        WHERE m.release_date >= CURRENT_DATE - INTERVAL '30 days' 
+        ORDER BY m.release_date DESC NULLS LAST
+        LIMIT(5)"""
     )
-
-    # TODO: Figure out how to force tortoise-orm to use an INNER JOIN
-    top_movies: list[Movie] = []
-    for movie in movies_by_review_and_release_date[:5]:
-        if len(movie.reviews):
-            top_movies.append(movie)
 
     ctx = dict(request=request, movies=top_movies)
     return templates.TemplateResponse("pages/home.html", ctx)
