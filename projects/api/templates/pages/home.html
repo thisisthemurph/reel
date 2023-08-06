@@ -2,18 +2,20 @@
 
 {% block title %}Reel home page{% endblock %}
 
-{% block heading %}Highest reviewed movies{% endblock %}
+{% block heading %}{% endblock %}
 
 {% block content %}
-<section>
+<section class="container">
+    <h2>This Month's Top Picks</h2>
+    <p class="subtitle">Check out the highest reviewed movies in the last 30 days.</p>
+
+    <section class="flex flex-col">
     {% for movie in movies %}
-        <div>
-            <p>{{ movie["title"] }}</p>
-            <p>{{ movie["distributor"] }}</p>
-            <p>{{ movie["release_date"] }}</p>
-            <p>Audience: {{ movie["reviews"][0]["audience_score"] }}%</p>
-           <hr />
-        </div>
+        <a href="#" class="group flex justify-between py-4 border-b border-b-slate-300">
+            <p class="text-md tracking-wide group-hover:text-yellow-600">{{ movie.title }}</p>
+            <p class="font-semibold">{{ movie.reviews[0].audience_score }}%</p>
+        </a>
     {% endfor %}
+    </section>
 </section>
 {% endblock %}

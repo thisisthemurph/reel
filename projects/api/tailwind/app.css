@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.container {
+    @apply mx-4;
+}
+
+h2 {
+    @apply text-xl text-yellow-600 tracking-wider;
+}
+
+h2.compact {
+    @apply: text-red-500;
+}
+
+p.subtitle {
+    @apply text-sm text-slate-400 tracking-wide pt-1 mb-4 italic;
+}

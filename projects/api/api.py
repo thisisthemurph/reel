@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from tortoise.contrib.fastapi import register_tortoise
 
@@ -12,6 +13,7 @@ from database import database as db
 from database.models import Movie, Review
 
 api = FastAPI()
+api.mount("/static", StaticFiles(directory="projects/api/static"), name="static")
 templates = Jinja2Templates(directory="projects/api/templates")
 
 load_dotenv()

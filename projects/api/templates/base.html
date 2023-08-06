@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Reel{% endblock %}</title>
+    <link href="{{ url_for('static', path='/css/app.css') }}" rel="stylesheet">
 </head>
 <body>
     {% include "partials/header.html" ignore missing %}
-    <main class="page">
-        <h2>{% block heading %}Reel heading{% endblock %}</h2>
-
+    <main>
         {% block content %}
         {% endblock %}
     </main>
