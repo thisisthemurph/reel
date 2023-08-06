@@ -54,6 +54,18 @@ async def movie_page(request: Request, movie_id: int):
     return templates.TemplateResponse("pages/movie.html", ctx)
 
 
+@api.get("/s", response_class=HTMLResponse)
+async def search_movie(request: Request, q: str):
+    await Movie.filter()
+    movies = await Movie.filter(title__icontains=q)
+
+    for movie in movies:
+        await movie.fetch_related("reviews")
+
+    ctx = dict(request=request, movies=movies, query=q)
+    return templates.TemplateResponse("pages/search-results.html", ctx)
+
+
 if __name__ == "__main__":
     asyncio.run(init())
 

@@ -1,6 +1,10 @@
-<header class="px-4 py-8 mb-6 bg-yellow-200 shadow">
-    <h1 class="text-3xl text-black font-bolder mb-2 tracking-widest">
-        <a href="/">Reel</a>
-    </h1>
-    <p class="text-sm text-slate-600 italic">Compare movie ratings across the web</p>
+<header class="flex justify-between items-center gap-8 px-4 py-8 mb-6 bg-yellow-200 shadow">
+    <section class="w-12">
+        <h1 class="text-3xl text-black font-bolder mb-2 tracking-widest">
+            <a href="/" title="BananaReel">🍌</a>
+        </h1>
+    </section>
+    <section class="w-full">
+        {% include 'partials/search.html' %}
+    </section>
 </header>

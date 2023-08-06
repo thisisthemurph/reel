@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}{{ query }}{% endblock %}
+
+{% block content %}
+<section class="container">
+    <h2>Results for '{{ query }}'</h2>
+
+    {% if movies|length == 0 %}
+        {% with message='There are no results for your search. Either the movie doesn\'t exist, or we don\'t have it on record. Please try searching for another movie.' %}
+            {% include 'partials/page-error.html' %}
+        {% endwith %}
+    {% endif %}
+
+    {% with movies=movies %}
+        {% include 'partials/movie-list.html' %}
+    {% endwith %}
+</section>
+{% endblock %}

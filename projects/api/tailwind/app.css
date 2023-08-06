@@ -15,9 +15,9 @@ h3 {
 }
 
 h4 {
-    @apply text-md text-slate-700 tracking-wider;
+    @apply text-slate-700 tracking-wider;
 }
 
 p.subtitle {
-    @apply text-sm text-slate-400 tracking-wide pt-1 mb-4 italic;
+    @apply text-sm text-slate-400 tracking-wide pt-1 mb-4;
 }
