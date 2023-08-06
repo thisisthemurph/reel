@@ -11,6 +11,7 @@
             <p>{{ movie["title"] }}</p>
             <p>{{ movie["distributor"] }}</p>
             <p>{{ movie["release_date"] }}</p>
+            <p>Audience: {{ movie["reviews"][0]["audience_score"] }}%</p>
            <hr />
         </div>
     {% endfor %}
