@@ -35,6 +35,9 @@ async def index(request: Request):
         LIMIT(5)"""
     )
 
+    for movie in top_movies:
+        await movie.fetch_related("reviews")
+
     ctx = dict(request=request, movies=top_movies)
     return templates.TemplateResponse("pages/home.html", ctx)
 
