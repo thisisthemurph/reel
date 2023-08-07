@@ -3,7 +3,7 @@ from datetime import datetime
 import httpx
 from selectolax.parser import HTMLParser
 
-from database.models import Movie
+from database.models import MovieModel
 from projects.bot import HtmlParserProtocol
 
 BOX_OFFICE_MOJO_URL = "https://www.boxofficemojo.com/year/{year}/"
@@ -14,7 +14,7 @@ class BoxOfficeMojoMovieListScraper:
         self.scraper = scraper
         self.logger = scraper.logger
 
-    def __parse_html(self, parser: HTMLParser, year: int) -> enumerate[Movie]:
+    def __parse_html(self, parser: HTMLParser, year: int) -> enumerate[MovieModel]:
         ranking_table = parser.css_first("tbody")
         for row in ranking_table.css("tr"):
             data = row.css("td")
@@ -30,14 +30,14 @@ class BoxOfficeMojoMovieListScraper:
                 release_date = None
 
             distributor = data[9].text(strip=True)
-            yield Movie(
+            yield MovieModel(
                 title=data[1].text(strip=True),
                 rank=int(data[0].text(strip=True)),
                 release_date=release_date,
                 distributor=None if not distributor or distributor == "-" else distributor,
             )
 
-    async def run(self, year: int) -> enumerate[Movie]:
+    async def run(self, year: int) -> enumerate[MovieModel]:
         mojo_box_office_url = BOX_OFFICE_MOJO_URL.format(year=year)
         async with httpx.AsyncClient() as client:
             parser = await self.scraper.get_html_parser(client, mojo_box_office_url)

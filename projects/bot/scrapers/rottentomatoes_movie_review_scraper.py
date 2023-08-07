@@ -5,9 +5,9 @@ from httpx import AsyncClient
 from selectolax.parser import HTMLParser, Node
 
 from projects.bot import HtmlParserProtocol
-from database.models import Movie, Review
+from database.models import MovieModel, ReviewModel
 
-SITE_NAME = "rottentomatoes"
+SITE_NAME = "Rottentomatoes"
 SEARCH_URL = "https://www.rottentomatoes.com/search?search={search}"
 
 
@@ -46,17 +46,17 @@ class RottenTomatoesMovieReviewScraper:
             critic_review_count,
         )
 
-    def __parse_reviews(self, parser: HTMLParser, url: str) -> Review:
+    def __parse_reviews(self, parser: HTMLParser, url: str) -> ReviewModel:
         """Parses the rottentomatoes scores from the movie details page"""
         score_board_node = parser.css_first("score-board")
         if not score_board_node:
             self.logger.debug(f"No score-board element at '{url}'")
-            return Review(site=SITE_NAME)
+            return ReviewModel(site=SITE_NAME)
 
         audience_score, audience_count = self.__parse_audience_scoreboard(score_board_node)
         critic_score, critic_count = self.__parse_critic_scoreboard(score_board_node)
 
-        return Review(
+        return ReviewModel(
             site=SITE_NAME,
             url=url,
             audience_score=audience_score,
@@ -103,7 +103,9 @@ class RottenTomatoesMovieReviewScraper:
         self.logger.debug("Fallback failed, movie list is empty")
         return None
 
-    async def get_movie_urls(self, c: AsyncClient, movies: list[Movie]) -> list[tuple[int, str]]:
+    async def get_movie_urls(
+        self, c: AsyncClient, movies: list[MovieModel]
+    ) -> list[tuple[int, str]]:
         """Searches the website for the movies and returns a list or urls for the movie pages."""
         all_movie_urls: list[tuple[int, str]] = []
         for movie in movies:
@@ -116,15 +118,17 @@ class RottenTomatoesMovieReviewScraper:
 
         return all_movie_urls
 
-    async def run(self, movies: list[Movie]) -> list[Review]:
-        movie_reviews: list[Review] = []
+    async def run(self, movies: list[MovieModel]) -> list[ReviewModel]:
+        movie_reviews: list[ReviewModel] = []
         async with httpx.AsyncClient() as client:
-            unresolved_movies: list[Movie] = []
+            unresolved_movies: list[MovieModel] = []
             for movie in movies:
-                if movie.source_url and "rottentomatoes.com" in movie.source_url:
-                    parser = await self.scraper.get_html_parser(client, movie.source_url)
+                source_urls = [source.url for source in movie.sources if source.name == SITE_NAME]
+                source_url = source_urls[0] if len(source_urls) else None
+                if source_url and "rottentomatoes.com" in source_url:
+                    parser = await self.scraper.get_html_parser(client, source_url)
                     if parser is not None:
-                        review = self.__parse_reviews(parser, movie.source_url)
+                        review = self.__parse_reviews(parser, source_url)
                         review.movie_id = movie.id
                         movie_reviews.append(review)
                 else:

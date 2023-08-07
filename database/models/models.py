@@ -1,19 +1,19 @@
-from datetime import datetime, timezone
-
 from tortoise import fields
 from tortoise.fields import ForeignKeyRelation
 from tortoise.models import Model
 
+from projects.bot.result_models import MovieResult
 
-class Movie(Model):
+
+class MovieModel(Model):
     id = fields.IntField(pk=True)
     title = fields.TextField()
     release_date = fields.DateField(null=True)
-    distributor = fields.TextField(null=True)
-    source_url = fields.TextField(null=True)
     created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
 
-    reviews: fields.ReverseRelation["Review"]
+    reviews: fields.ReverseRelation["ReviewModel"]
+    sources: fields.ReverseRelation["SourceModel"]
 
     class Meta:
         table = "movies"
@@ -26,20 +26,36 @@ class Movie(Model):
 
     def __eq__(self, other):
         """Determines if the same movie, does not check based on PK"""
-        if not isinstance(other, Movie):
-            return False
+        if isinstance(other, MovieModel):
+            return self.title == other.title and self.release_date == other.release_date
 
-        return (
-            self.title == other.title
-            and self.rank == other.rank
-            and self.release_date == other.release_date
-            and self.distributor == other.distributor
-        )
+        if isinstance(other, MovieResult):
+            return self.title == other.title and self.release_date == other.release_date
+
+        return False
 
 
-class Review(Model):
-    movie: ForeignKeyRelation[Movie] = fields.ForeignKeyField(
-        "models.Movie", related_name="reviews", description="FK to movie"
+class SourceModel(Model):
+    movie: ForeignKeyRelation[MovieModel] = fields.ForeignKeyField(
+        "models.MovieModel", related_name="sources", description="FK to movie"
+    )
+
+    name = fields.TextField()
+    url = fields.TextField()
+
+    class Meta:
+        table = "movie_sources"
+
+    def __repr__(self):
+        return f"Source(title={self.name}, url={self.url})"
+
+    def __str__(self):
+        return self.__repr__()
+
+
+class ReviewModel(Model):
+    movie: ForeignKeyRelation[MovieModel] = fields.ForeignKeyField(
+        "models.MovieModel", related_name="reviews", description="FK to movie"
     )
 
     site = fields.TextField()

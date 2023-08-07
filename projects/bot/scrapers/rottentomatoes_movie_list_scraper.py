@@ -1,12 +1,14 @@
 import asyncio
 from datetime import datetime, date
+
 import httpx
 from selectolax.parser import HTMLParser, Node
 
-from database.models import Movie
-from projects.bot import HtmlParserProtocol, HttpxHtmlParser
+from projects.bot import HtmlParserProtocol
+from projects.bot.result_models import MovieResult, SourceResult
 
 # URL for the list of fresh movies - page number just loads more movies - max page is 5
+SITE_NAME = "Rottentomatoes"
 BASE_URL = "https://www.rottentomatoes.com"
 MOVIE_LIST_URL = "https://www.rottentomatoes.com/browse/movies_in_theaters/sort:a_z?page=5"
 
@@ -27,8 +29,8 @@ class RottenTomatoesMovieListScraper:
         except ValueError:
             return None
 
-    async def __parse_video_tiles(self, parser: HTMLParser) -> list[Movie]:
-        movies: list[Movie] = []
+    async def __parse_video_tiles(self, parser: HTMLParser) -> list[MovieResult]:
+        movies: list[MovieResult] = []
         tile_nodes = parser.css("div.js-tile-link")
         for tile_node in tile_nodes:
             link_node = tile_node.css_first('a[data-qa="discovery-media-list-item-caption"]')
@@ -37,18 +39,19 @@ class RottenTomatoesMovieListScraper:
                 'span[data-qa="discovery-media-list-item-start-date"]'
             )
 
+            title = title_node.text(strip=True)
             movies.append(
-                Movie(
-                    title=title_node.text(strip=True),
+                MovieResult(
+                    title=title,
                     release_date=self.safe_parse_open_date(opened_node),
-                    source_url=f"{BASE_URL}{link_node.attrs.get('href')}",
+                    source=SourceResult(SITE_NAME, f"{BASE_URL}{link_node.attrs.get('href')}"),
                 )
             )
 
         return movies
 
-    async def __parse_normal_tiles(self, parser: HTMLParser) -> list[Movie]:
-        movies: list[Movie] = []
+    async def __parse_normal_tiles(self, parser: HTMLParser) -> list[MovieResult]:
+        movies: list[MovieResult] = []
         tile_nodes = parser.css("a.js-tile-link")
         for tile_node in tile_nodes:
             title_node = tile_node.css_first('span[data-qa="discovery-media-list-item-title"]')
@@ -57,21 +60,21 @@ class RottenTomatoesMovieListScraper:
             )
 
             movies.append(
-                Movie(
+                MovieResult(
                     title=title_node.text(strip=True),
                     release_date=self.safe_parse_open_date(opened_node) if opened_node else None,
-                    source_url=f"{BASE_URL}{tile_node.attrs.get('href')}",
+                    source=SourceResult(SITE_NAME, f"{BASE_URL}{tile_node.attrs.get('href')}"),
                 )
             )
 
         return movies
 
-    async def __parse_tiles(self, parser: HTMLParser) -> list[Movie]:
+    async def __parse_tiles(self, parser: HTMLParser) -> list[MovieResult]:
         coroutines = [self.__parse_normal_tiles(parser), self.__parse_video_tiles(parser)]
-        results: tuple[list[Movie]] = await asyncio.gather(*coroutines)
+        results: tuple[list[MovieResult]] = await asyncio.gather(*coroutines)
         return [movie for movie_list in results for movie in movie_list]
 
-    async def run(self) -> list[Movie]:
+    async def run(self) -> list[MovieResult]:
         async with httpx.AsyncClient() as client:
             parser = await self.scraper.get_html_parser(client, MOVIE_LIST_URL)
             return await self.__parse_tiles(parser)

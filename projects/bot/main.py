@@ -6,7 +6,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 from database import database as db
-from database.models import Movie
+from database.models import MovieModel, SourceModel
 from projects.bot import HttpxHtmlParser
 from projects.bot.scrapers import RottenTomatoesMovieListScraper, RottenTomatoesMovieReviewScraper
 
@@ -15,27 +15,31 @@ async def scrape_recent_movies():
     """Scrapes recent movies and adds/updates the database with the results."""
     scraper = RottenTomatoesMovieListScraper(HttpxHtmlParser())
     for movie in await scraper.run():
-        existing_movie = await Movie.filter(title=movie.title).first()
+        existing_movie = (
+            await MovieModel.filter(title=movie.title).prefetch_related("sources").first()
+        )
 
-        # The movie already exists
-        if existing_movie and existing_movie == movie:
-            continue
-
-        # The movie exists but needs updating
         if existing_movie:
-            existing_movie.title = movie.title
-            existing_movie.rank = movie.rank
-            existing_movie.release_date = movie.release_date
-            existing_movie.distributor = movie.distributor
-            await existing_movie.save()
-            continue
+            # Update the movie if the details are different
+            if existing_movie != movie:
+                existing_movie.release_date = movie.release_date
+                await existing_movie.save()
 
-        await movie.save()
+            # Add the source for the movie if it isn't there already
+            if movie.source.url not in [source.url for source in existing_movie.sources]:
+                await SourceModel.get_or_create(
+                    name=movie.source.name, url=movie.source.url, movie_id=existing_movie.id
+                )
+        else:
+            new_movie = await MovieModel.create(title=movie.title, release_date=movie.release_date)
+            await SourceModel.create(
+                name=movie.source.name, url=movie.source.url, movie_id=new_movie.id
+            )
 
 
 async def scrape_movie_reviews():
     """Scrapes reviews from rotten tomatoes for all movies in the database."""
-    movies = await Movie.all()
+    movies = await MovieModel.all().prefetch_related("sources")
     scraper = RottenTomatoesMovieReviewScraper(HttpxHtmlParser())
     for review in await scraper.run(movies):
         await review.save()

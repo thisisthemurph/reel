@@ -10,7 +10,7 @@ from fastapi.templating import Jinja2Templates
 from tortoise.contrib.fastapi import register_tortoise
 
 from database import database as db
-from database.models import Movie, Review
+from database.models import MovieModel
 
 api = FastAPI()
 api.mount("/static", StaticFiles(directory="projects/api/static"), name="static")
@@ -27,7 +27,7 @@ async def init():
 @api.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     # TODO: Figure out how to force tortoise-orm to use an INNER JOIN and remove raw SQL
-    top_movies: list[Movie] = await Movie.raw(
+    top_movies: list[MovieModel] = await MovieModel.raw(
         """SELECT m.*, r.audience_score, r.audience_count
         FROM movies m
         INNER JOIN reviews r
@@ -46,7 +46,7 @@ async def index(request: Request):
 
 @api.get("/m/{movie_id}", response_class=HTMLResponse)
 async def movie_page(request: Request, movie_id: int):
-    movie = await Movie.filter(id=movie_id).first()
+    movie = await MovieModel.filter(id=movie_id).first()
     if movie:
         await movie.fetch_related("reviews")
 
@@ -56,8 +56,8 @@ async def movie_page(request: Request, movie_id: int):
 
 @api.get("/s", response_class=HTMLResponse)
 async def search_movie(request: Request, q: str):
-    await Movie.filter()
-    movies = await Movie.filter(title__icontains=q)
+    await MovieModel.filter()
+    movies = await MovieModel.filter(title__icontains=q)
 
     for movie in movies:
         await movie.fetch_related("reviews")
