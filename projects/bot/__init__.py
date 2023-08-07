@@ -36,7 +36,13 @@ class HttpxHtmlParser:
 
     async def get_html_parser(self, client: AsyncClient, url: str):
         try:
-            resp = await client.get(url)
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+            }
+            resp = await client.get(url, headers=headers)
+            if resp.status_code != 200:
+                self.logger.warning(f"URL '{url} returned status code of {resp.status_code}'")
+                return None
             return HTMLParser(resp.content)
         except httpx.ReadTimeout as ex:
             self.logger.exception(f"httpx.ReadTimeout for '{url}'")
