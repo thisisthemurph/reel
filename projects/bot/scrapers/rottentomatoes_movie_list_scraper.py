@@ -27,7 +27,7 @@ class RottenTomatoesMovieListScraper:
         except ValueError:
             return None
 
-    async def __parse_video_tiles(self, parser: HTMLParser):
+    async def __parse_video_tiles(self, parser: HTMLParser) -> list[Movie]:
         movies: list[Movie] = []
         tile_nodes = parser.css("div.js-tile-link")
         for tile_node in tile_nodes:
@@ -47,7 +47,7 @@ class RottenTomatoesMovieListScraper:
 
         return movies
 
-    async def __parse_normal_tiles(self, parser: HTMLParser):
+    async def __parse_normal_tiles(self, parser: HTMLParser) -> list[Movie]:
         movies: list[Movie] = []
         tile_nodes = parser.css("a.js-tile-link")
         for tile_node in tile_nodes:
@@ -66,19 +66,12 @@ class RottenTomatoesMovieListScraper:
 
         return movies
 
-    async def __parse_tiles(self, parser: HTMLParser):
-        normal = await self.__parse_normal_tiles(parser)
-        video = await self.__parse_video_tiles(parser)
-        return normal + video
+    async def __parse_tiles(self, parser: HTMLParser) -> list[Movie]:
+        coroutines = [self.__parse_normal_tiles(parser), self.__parse_video_tiles(parser)]
+        results: tuple[list[Movie]] = await asyncio.gather(*coroutines)
+        return [movie for movie_list in results for movie in movie_list]
 
-    async def run(self):
-        urls = []
+    async def run(self) -> list[Movie]:
         async with httpx.AsyncClient() as client:
             parser = await self.scraper.get_html_parser(client, MOVIE_LIST_URL)
             return await self.__parse_tiles(parser)
-
-
-if __name__ == "__main__":
-    p = HttpxHtmlParser()
-    s = RottenTomatoesMovieListScraper(p)
-    asyncio.run(s.run())
