@@ -1,1 +1,1 @@
-from .models import MovieResult, SourceResult
+from .models import MovieResult, SourceResult, ReviewResult

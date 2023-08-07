@@ -1,17 +1,17 @@
+import os
 import asyncio
 import logging
-import os
 from datetime import datetime
 
 from dotenv import load_dotenv
 
 from database import database as db
-from database.models import MovieModel, SourceModel
+from database.models import MovieModel, SourceModel, ReviewModel
 from projects.bot import HttpxHtmlParser
 from projects.bot.scrapers import RottenTomatoesMovieListScraper, RottenTomatoesMovieReviewScraper
 
 
-async def scrape_recent_movies():
+async def scrape_recent_movies_from_rottentomatoes():
     """Scrapes recent movies and adds/updates the database with the results."""
     scraper = RottenTomatoesMovieListScraper(HttpxHtmlParser())
     for movie in await scraper.run():
@@ -38,11 +38,18 @@ async def scrape_recent_movies():
 
 
 async def scrape_movie_reviews():
-    """Scrapes reviews from rotten tomatoes for all movies in the database."""
+    """Scrapes reviews from Rottentomatoes for all movies in the database."""
     movies = await MovieModel.all().prefetch_related("sources")
     scraper = RottenTomatoesMovieReviewScraper(HttpxHtmlParser())
     for review in await scraper.run(movies):
-        await review.save()
+        if review.should_save():
+            await ReviewModel.get_or_create(
+                source_id=review.source_id,
+                audience_score=review.audience_score,
+                audience_count=review.audience_count,
+                critic_score=review.critic_score,
+                critic_count=review.critic_count,
+            )
 
 
 async def main():
@@ -53,7 +60,7 @@ async def main():
 
     await db.init_database(os.getenv("DATABASE_URL"))
 
-    await scrape_recent_movies()
+    await scrape_recent_movies_from_rottentomatoes()
     await scrape_movie_reviews()
 
     logger.debug(f"Finished executing at {datetime.now().isoformat()}")

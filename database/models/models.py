@@ -12,7 +12,6 @@ class MovieModel(Model):
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
 
-    reviews: fields.ReverseRelation["ReviewModel"]
     sources: fields.ReverseRelation["SourceModel"]
 
     class Meta:
@@ -40,8 +39,11 @@ class SourceModel(Model):
         "models.MovieModel", related_name="sources", description="FK to movie"
     )
 
+    id = fields.IntField(pk=True)
     name = fields.TextField()
     url = fields.TextField()
+
+    reviews: fields.ReverseRelation["ReviewModel"]
 
     class Meta:
         table = "movie_sources"
@@ -54,12 +56,10 @@ class SourceModel(Model):
 
 
 class ReviewModel(Model):
-    movie: ForeignKeyRelation[MovieModel] = fields.ForeignKeyField(
-        "models.MovieModel", related_name="reviews", description="FK to movie"
+    source: ForeignKeyRelation[MovieModel] = fields.ForeignKeyField(
+        "models.SourceModel", related_name="reviews", description="FK to a movie source"
     )
 
-    site = fields.TextField()
-    url = fields.TextField(null=True)
     audience_score = fields.IntField(null=True)
     audience_count = fields.TextField(null=True)
     critic_score = fields.IntField(null=True)
@@ -70,9 +70,7 @@ class ReviewModel(Model):
         table = "reviews"
 
     def __repr__(self):
-        return (
-            f"Review(site={self.site}, audience={self.audience_score}, critic={self.critic_score})"
-        )
+        return f"Review(audience={self.audience_score}, critic={self.critic_score})"
 
     def __str__(self):
         return self.__repr__()

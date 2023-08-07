@@ -4,8 +4,9 @@ import httpx
 from httpx import AsyncClient
 from selectolax.parser import HTMLParser, Node
 
+from database.models import MovieModel
 from projects.bot import HtmlParserProtocol, sites
-from database.models import MovieModel, ReviewModel
+from projects.bot.result_models import ReviewResult
 
 SEARCH_URL = "https://www.rottentomatoes.com/search?search={search}"
 
@@ -45,19 +46,18 @@ class RottenTomatoesMovieReviewScraper:
             critic_review_count,
         )
 
-    def __parse_reviews(self, parser: HTMLParser, url: str) -> ReviewModel:
+    def __parse_reviews(self, parser: HTMLParser, source_id: int | None, url: str) -> ReviewResult:
         """Parses the rottentomatoes scores from the movie details page"""
         score_board_node = parser.css_first("score-board")
         if not score_board_node:
             self.logger.debug(f"No score-board element at '{url}'")
-            return ReviewModel(site=sites.ROTTENTOMATOES)
+            return ReviewResult(source_id, None, None, None, None)
 
         audience_score, audience_count = self.__parse_audience_scoreboard(score_board_node)
         critic_score, critic_count = self.__parse_critic_scoreboard(score_board_node)
 
-        return ReviewModel(
-            site=sites.ROTTENTOMATOES,
-            url=url,
+        return ReviewResult(
+            source_id=source_id,
             audience_score=audience_score,
             audience_count=audience_count,
             critic_score=critic_score,
@@ -117,31 +117,16 @@ class RottenTomatoesMovieReviewScraper:
 
         return all_movie_urls
 
-    async def run(self, movies: list[MovieModel]) -> list[ReviewModel]:
-        movie_reviews: list[ReviewModel] = []
+    async def run(self, movies: list[MovieModel]) -> list[ReviewResult]:
+        movie_reviews: list[ReviewResult] = []
         async with httpx.AsyncClient() as client:
-            unresolved_movies: list[MovieModel] = []
             for movie in movies:
-                source_urls = [
-                    source.url for source in movie.sources if source.name == sites.ROTTENTOMATOES
-                ]
-                source_url = source_urls[0] if len(source_urls) else None
-                if source_url and "rottentomatoes.com" in source_url:
-                    parser = await self.scraper.get_html_parser(client, source_url)
-                    if parser is not None:
-                        review = self.__parse_reviews(parser, source_url)
-                        review.movie_id = movie.id
-                        movie_reviews.append(review)
-                else:
-                    unresolved_movies.append(movie)
-
-            # Where there is no rottentomatoes URL, we will have to search for the movie
-            movie_urls = await self.get_movie_urls(client, unresolved_movies)
-            for movie_id, movie_url in movie_urls:
-                parser = await self.scraper.get_html_parser(client, movie_url)
+                sources = [s for s in movie.sources if s.name == sites.ROTTENTOMATOES]
+                source = sources[0] if len(sources) else None
+                parser = await self.scraper.get_html_parser(client, source.url)
                 if parser is not None:
-                    review = self.__parse_reviews(parser, movie_url)
-                    review.movie_id = movie_id
+                    review = self.__parse_reviews(parser, source.id, source.url)
+                    review.movie_id = movie.id
                     movie_reviews.append(review)
 
         return movie_reviews
