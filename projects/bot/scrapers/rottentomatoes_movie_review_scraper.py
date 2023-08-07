@@ -4,10 +4,9 @@ import httpx
 from httpx import AsyncClient
 from selectolax.parser import HTMLParser, Node
 
-from projects.bot import HtmlParserProtocol
+from projects.bot import HtmlParserProtocol, sites
 from database.models import MovieModel, ReviewModel
 
-SITE_NAME = "Rottentomatoes"
 SEARCH_URL = "https://www.rottentomatoes.com/search?search={search}"
 
 
@@ -51,13 +50,13 @@ class RottenTomatoesMovieReviewScraper:
         score_board_node = parser.css_first("score-board")
         if not score_board_node:
             self.logger.debug(f"No score-board element at '{url}'")
-            return ReviewModel(site=SITE_NAME)
+            return ReviewModel(site=sites.ROTTENTOMATOES)
 
         audience_score, audience_count = self.__parse_audience_scoreboard(score_board_node)
         critic_score, critic_count = self.__parse_critic_scoreboard(score_board_node)
 
         return ReviewModel(
-            site=SITE_NAME,
+            site=sites.ROTTENTOMATOES,
             url=url,
             audience_score=audience_score,
             audience_count=audience_count,
@@ -123,7 +122,9 @@ class RottenTomatoesMovieReviewScraper:
         async with httpx.AsyncClient() as client:
             unresolved_movies: list[MovieModel] = []
             for movie in movies:
-                source_urls = [source.url for source in movie.sources if source.name == SITE_NAME]
+                source_urls = [
+                    source.url for source in movie.sources if source.name == sites.ROTTENTOMATOES
+                ]
                 source_url = source_urls[0] if len(source_urls) else None
                 if source_url and "rottentomatoes.com" in source_url:
                     parser = await self.scraper.get_html_parser(client, source_url)

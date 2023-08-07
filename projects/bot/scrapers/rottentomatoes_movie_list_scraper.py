@@ -6,9 +6,9 @@ from selectolax.parser import HTMLParser, Node
 
 from projects.bot import HtmlParserProtocol
 from projects.bot.result_models import MovieResult, SourceResult
+from projects.bot import sites
 
 # URL for the list of fresh movies - page number just loads more movies - max page is 5
-SITE_NAME = "Rottentomatoes"
 BASE_URL = "https://www.rottentomatoes.com"
 MOVIE_LIST_URL = "https://www.rottentomatoes.com/browse/movies_in_theaters/sort:a_z?page=5"
 
@@ -44,7 +44,9 @@ class RottenTomatoesMovieListScraper:
                 MovieResult(
                     title=title,
                     release_date=self.safe_parse_open_date(opened_node),
-                    source=SourceResult(SITE_NAME, f"{BASE_URL}{link_node.attrs.get('href')}"),
+                    source=SourceResult(
+                        sites.ROTTENTOMATOES, f"{BASE_URL}{link_node.attrs.get('href')}"
+                    ),
                 )
             )
 
@@ -63,7 +65,9 @@ class RottenTomatoesMovieListScraper:
                 MovieResult(
                     title=title_node.text(strip=True),
                     release_date=self.safe_parse_open_date(opened_node) if opened_node else None,
-                    source=SourceResult(SITE_NAME, f"{BASE_URL}{tile_node.attrs.get('href')}"),
+                    source=SourceResult(
+                        sites.ROTTENTOMATOES, f"{BASE_URL}{tile_node.attrs.get('href')}"
+                    ),
                 )
             )
 
