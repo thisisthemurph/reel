@@ -8,13 +8,13 @@ from dotenv import load_dotenv
 from database import database as db
 from database.models import Movie
 from projects.bot import HttpxHtmlParser
-from projects.bot.scrapers import BoxOfficeMojoMovieListScraper, RottenTomatoesMovieReviewScraper
+from projects.bot.scrapers import RottenTomatoesMovieListScraper, RottenTomatoesMovieReviewScraper
 
 
 async def scrape_recent_movies():
     """Scrapes recent movies and adds/updates the database with the results."""
-    scraper = BoxOfficeMojoMovieListScraper(HttpxHtmlParser())
-    for movie in await scraper.run(year=datetime.now().year):
+    scraper = RottenTomatoesMovieListScraper(HttpxHtmlParser())
+    for movie in await scraper.run():
         existing_movie = await Movie.filter(title=movie.title).first()
 
         # The movie already exists

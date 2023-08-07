@@ -58,6 +58,7 @@ class RottenTomatoesMovieReviewScraper:
 
         return Review(
             site=SITE_NAME,
+            url=url,
             audience_score=audience_score,
             audience_count=audience_count,
             critic_score=critic_score,
@@ -118,7 +119,19 @@ class RottenTomatoesMovieReviewScraper:
     async def run(self, movies: list[Movie]) -> list[Review]:
         movie_reviews: list[Review] = []
         async with httpx.AsyncClient() as client:
-            movie_urls = await self.get_movie_urls(client, movies)
+            unresolved_movies: list[Movie] = []
+            for movie in movies:
+                if movie.source_url and "rottentomatoes.com" in movie.source_url:
+                    parser = await self.scraper.get_html_parser(client, movie.source_url)
+                    if parser is not None:
+                        review = self.__parse_reviews(parser, movie.source_url)
+                        review.movie_id = movie.id
+                        movie_reviews.append(review)
+                else:
+                    unresolved_movies.append(movie)
+
+            # Where there is no rottentomatoes URL, we will have to search for the movie
+            movie_urls = await self.get_movie_urls(client, unresolved_movies)
             for movie_id, movie_url in movie_urls:
                 parser = await self.scraper.get_html_parser(client, movie_url)
                 if parser is not None:

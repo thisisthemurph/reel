@@ -1,2 +1,3 @@
 from .boxofficemojo_movie_list_scraper import BoxOfficeMojoMovieListScraper
 from .rottentomatoes_movie_review_scraper import RottenTomatoesMovieReviewScraper
+from .rottentomatoes_movie_list_scraper import RottenTomatoesMovieListScraper

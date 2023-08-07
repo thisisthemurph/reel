@@ -8,10 +8,10 @@ from tortoise.models import Model
 class Movie(Model):
     id = fields.IntField(pk=True)
     title = fields.TextField()
-    rank = fields.IntField()
     release_date = fields.DateField(null=True)
     distributor = fields.TextField(null=True)
-    created_at = fields.DatetimeField(default=datetime.now(timezone.utc))
+    source_url = fields.TextField(null=True)
+    created_at = fields.DatetimeField(auto_now_add=True)
 
     reviews: fields.ReverseRelation["Review"]
 
@@ -43,6 +43,7 @@ class Review(Model):
     )
 
     site = fields.TextField()
+    url = fields.TextField(null=True)
     audience_score = fields.IntField(null=True)
     audience_count = fields.TextField(null=True)
     critic_score = fields.IntField(null=True)
