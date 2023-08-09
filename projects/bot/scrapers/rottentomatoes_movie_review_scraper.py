@@ -123,6 +123,10 @@ class RottenTomatoesMovieReviewScraper:
             for movie in movies:
                 sources = [s for s in movie.sources if s.name == sites.ROTTENTOMATOES]
                 source = sources[0] if len(sources) else None
+
+                if not source:
+                    continue
+
                 parser = await self.scraper.get_html_parser(client, source.url)
                 if parser is not None:
                     review = self.__parse_reviews(parser, source.id, source.url)
