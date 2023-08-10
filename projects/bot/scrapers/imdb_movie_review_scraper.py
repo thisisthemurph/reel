@@ -31,8 +31,8 @@ class IMDBMovieReviewScraper:
 
         return ReviewResult(
             source_id=source_id,
-            audience_score=int(float(user_rating.split(" ", 1)[0]) * 10),
-            audience_count=None,
+            audience_score=int(float(user_rating.split(" ", 1)[0]) * 10) if user_rating else None,
+            audience_count="",
             critic_score=int(float(imdb_rating) * 10) if imdb_rating else None,
             critic_count=imdb_count_node.text(strip=True) if imdb_count_node else None,
         )
