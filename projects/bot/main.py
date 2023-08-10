@@ -57,15 +57,20 @@ async def scrape_recent_movies() -> list[MovieModel]:
 
 async def fill_missing_movie_sources(movies: list[MovieModel]):
     """Finds movie sources for movies that do not have a source from a given site."""
+    imdb_scraper = IMDBMovieReviewScraper(HttpxHtmlParser())
     rt_scraper = RottenTomatoesMovieReviewScraper(HttpxHtmlParser())
-    # imdb_scraper = IMDBMovieReviewScraper(HttpxHtmlParser())
 
+    # Build lists of movies for that require a specific source
+    imdb_movies = [m for m in movies if sites.IMDB not in [s.name for s in m.sources]]
     rotten_tomato_movies = [
         m for m in movies if sites.ROTTENTOMATOES not in [s.name for s in m.sources]
     ]
 
-    sources = await rt_scraper.get_sources(rotten_tomato_movies)
-    for source in sources:
+    source_results = await asyncio.gather(
+        imdb_scraper.get_sources(imdb_movies), rt_scraper.get_sources(rotten_tomato_movies)
+    )
+
+    for source in [source for sources in source_results for source in sources]:
         await source.save()
 
 
