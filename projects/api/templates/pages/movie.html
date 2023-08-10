@@ -12,9 +12,9 @@
         {% endwith %}
     {% else %}
         <h2 class="mb-6">{{ movie.title }}</h2>
-        {% if movie.reviews|length >= 1 %}
+        {% if movie.sources|length >= 1 and movie.sources[0].reviews|length >= 1 %}
             <h3 class="mb-2">Reviews</h3>
-            {% for review in movie.reviews %}
+            {% for review in movie.sources[0].reviews %}
             <section class="py-4 border-b border-b-slate-300">
                 <h4 class="mb-2 text-red-400">{{ review.site|upper }}</h4>
                 <div class="grid grid-rows-2 grid-cols-4 gap-2">

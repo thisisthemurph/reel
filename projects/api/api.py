@@ -30,17 +30,20 @@ async def index(request: Request):
     top_movies: list[MovieModel] = await MovieModel.raw(
         """SELECT m.*, r.audience_score, r.audience_count
         FROM movies m
+        INNER JOIN movie_sources s
+            ON m.id = s.movie_id
         INNER JOIN reviews r
-            ON m.id = r.movie_id
+            ON s.id = r.source_id
         WHERE m.release_date >= CURRENT_DATE - INTERVAL '30 days' 
         ORDER BY m.release_date DESC NULLS LAST
         LIMIT(5)"""
     )
 
     for movie in top_movies:
-        await movie.fetch_related("reviews")
+        await movie.fetch_related("sources", "sources__reviews")
 
     ctx = dict(request=request, movies=top_movies)
+    print(top_movies)
     return templates.TemplateResponse("pages/home.html", ctx)
 
 
@@ -48,7 +51,7 @@ async def index(request: Request):
 async def movie_page(request: Request, movie_id: int):
     movie = await MovieModel.filter(id=movie_id).first()
     if movie:
-        await movie.fetch_related("reviews")
+        await movie.fetch_related("sources__reviews")
 
     ctx = dict(request=request, movie=movie)
     return templates.TemplateResponse("pages/movie.html", ctx)

@@ -2,8 +2,8 @@
 {% for movie in movies %}
     <a href="m/{{ movie.id }}" class="group flex justify-between py-4 border-b border-b-slate-300">
         <p class="text-md tracking-wide group-hover:text-yellow-600">{{ movie.title }}</p>
-        {% if movie.reviews|length >= 1 and movie.reviews[0].audience_score is not none %}
-            <p class="font-semibold">{{ movie.reviews[0].audience_score }}%</p>
+        {% if movie.sources[0].reviews|length >= 1 and movie.sources[0].reviews[0].audience_score is not none %}
+            <p class="font-semibold">{{ movie.sources[0].reviews[0].audience_score }}%</p>
         {% else %}
             <p>&mdash;</p>
         {% endif %}
