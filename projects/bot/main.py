@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from database import database as db
 from database.models import MovieModel, SourceModel, ReviewModel
-from projects.bot import HttpxHtmlParser
+from projects.bot import HttpxHtmlParser, sites
 from projects.bot.scrapers import (
     RottenTomatoesMovieListScraper,
     RottenTomatoesMovieReviewScraper,
@@ -16,13 +16,15 @@ from projects.bot.scrapers import (
 from projects.bot.scrapers.imdb_movie_list_scraper import IMDBMovieListScraper
 
 
-async def scrape_recent_movies():
+async def scrape_recent_movies() -> list[MovieModel]:
     """Scrapes recent movies and adds/updates the database with the results."""
     rt_scraper = RottenTomatoesMovieListScraper(HttpxHtmlParser())
     imdb_scraper = IMDBMovieListScraper(HttpxHtmlParser())
-    scraped_movies = await asyncio.gather(rt_scraper.run(), imdb_scraper.run())
 
-    for movie in [m for movie_list in scraped_movies for m in movie_list]:
+    movie_results: list[MovieModel] = []
+    scraped_movies = await asyncio.gather(rt_scraper.run(), imdb_scraper.run())
+    scraped_movies = [m for movie_list in scraped_movies for m in movie_list]
+    for movie in scraped_movies:
         existing_movie = (
             await MovieModel.filter(title=movie.title).prefetch_related("sources").first()
         )
@@ -34,15 +36,37 @@ async def scrape_recent_movies():
                 await existing_movie.save()
 
             # Add the source for the movie if it isn't there already
+            # TODO: There could be an issue with the URL having changed for the movie source
             if movie.source.url not in [source.url for source in existing_movie.sources]:
                 await SourceModel.get_or_create(
                     name=movie.source.name, url=movie.source.url, movie_id=existing_movie.id
                 )
+
+            movie_results.append(existing_movie)
         else:
             new_movie = await MovieModel.create(title=movie.title, release_date=movie.release_date)
             await SourceModel.create(
                 name=movie.source.name, url=movie.source.url, movie_id=new_movie.id
             )
+
+            await new_movie.fetch_related("sources")
+            movie_results.append(new_movie)
+
+    return movie_results
+
+
+async def fill_missing_movie_sources(movies: list[MovieModel]):
+    """Finds movie sources for movies that do not have a source from a given site."""
+    rt_scraper = RottenTomatoesMovieReviewScraper(HttpxHtmlParser())
+    # imdb_scraper = IMDBMovieReviewScraper(HttpxHtmlParser())
+
+    rotten_tomato_movies = [
+        m for m in movies if sites.ROTTENTOMATOES not in [s.name for s in m.sources]
+    ]
+
+    sources = await rt_scraper.get_sources(rotten_tomato_movies)
+    for source in sources:
+        await source.save()
 
 
 async def scrape_movie_reviews():
@@ -71,7 +95,9 @@ async def main():
 
     await db.init_database(os.getenv("DATABASE_URL"))
 
-    await scrape_recent_movies()
+    recent_movies = await scrape_recent_movies()
+    await fill_missing_movie_sources(recent_movies)
+
     await scrape_movie_reviews()
 
     logger.debug(f"Finished executing at {datetime.now().isoformat()}")

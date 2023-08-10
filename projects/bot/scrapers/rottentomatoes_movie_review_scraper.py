@@ -4,7 +4,7 @@ import httpx
 from httpx import AsyncClient
 from selectolax.parser import HTMLParser, Node
 
-from database.models import MovieModel
+from database.models import MovieModel, SourceModel
 from projects.bot import HtmlParserProtocol, sites
 from projects.bot.result_models import ReviewResult
 
@@ -134,3 +134,12 @@ class RottenTomatoesMovieReviewScraper:
                     movie_reviews.append(review)
 
         return movie_reviews
+
+    async def get_sources(self, movies: list[MovieModel]) -> list[SourceModel]:
+        sources: list[SourceModel] = []
+        async with httpx.AsyncClient() as client:
+            movie_urls = await self.get_movie_urls(client, movies)
+            for movie_id, url in movie_urls:
+                sources.append(SourceModel(name=sites.ROTTENTOMATOES, url=url, movie_id=movie_id))
+
+        return sources
