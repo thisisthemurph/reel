@@ -5,32 +5,86 @@
 {% endblock %}
 
 {% block content %}
-<section class="container">
+<section class="mx-4">
     {% if movie is none %}
         {% with message='It looks like this movie does not exist in our database, please try searching for the movie you are interested in.' %}
             {% include 'partials/page-error.html' %}
         {% endwith %}
     {% else %}
         <h2 class="mb-6">{{ movie.title }}</h2>
-        {% if movie.sources|length >= 1 and movie.sources[0].reviews|length >= 1 %}
-            <h3 class="mb-2">Reviews</h3>
-            {% for review in movie.sources[0].reviews %}
-            <section class="py-4 border-b border-b-slate-300">
-                <h4 class="mb-2 text-red-400">{{ review.site|upper }}</h4>
-                <div class="grid grid-rows-2 grid-cols-4 gap-2">
-                    <p class="col-span-2 tracking-wide">Audience</p>
-                    <p class="font-bold">{{ review.audience_score }}%</p>
-                    <p>{{ review.audience_count }} reviews</p>
-
-                    <p class="col-span-2 tracking-wide">Critic</p>
-                    <p class="font-bold">{{ review.critic_score }}%</p>
-                    <p>{{ review.critic_count|lower }}</p>
-                </div>
-            </section>
+        <div class="flex flex-col sm:flex-wrap sm:flex-row gap-4">
+        {% for source in movie.sources %}
+            {% for review in source.reviews %}
+                <a class="p-6 w-full sm:w-[calc(50%-0.5rem)] border border-gray-200 rounded-xl hover:shadow"
+                   href="{{ source.url }}"
+                   target="_blank">
+                    <h3 class="block mb-4 text-red-400">
+                        {% if source.name|upper == "IMDB" %} 📺
+                        {% elif source.name|upper == "ROTTENTOMATOES" %} 🍅
+                        {% else %} 🎥
+                        {% endif %}
+                        {{ source.name|upper }}
+                    </h3>
+                    <div class="flex flex-col gap-4">
+                        <section class="grid grid-cols-3">
+                            <p class="w-12 tracking-wide">Audience</p>
+                            <p class="font-bold">
+                                {% if review.audience_score is not none %}
+                                    {% if source.name|upper == "IMDB" %}
+                                        {% set score = review.audience_score / 10 / 2 %}
+                                        {% set score_rounded = score|round(0, 'ceil')|int %}
+                                        <span title="{{ score }}/5">
+                                        {% for _ in range(0, score_rounded) %}⭐{% endfor %}
+                                        </span>
+                                    {% else %}
+                                        {{ review.audience_score }}%
+                                    {% endif %}
+                                {% else %}
+                                    &mdash;
+                                {% endif %}
+                            </p>
+                            <p>
+                                <!-- No user review counts are collected for IMDB -->
+                                {% if source.name|upper == "IMDB" or review.audience_count is none %}
+                                    &mdash;
+                                {% else %}
+                                    {{ review.audience_count }} Reviews
+                                {% endif %}
+                            </p>
+                        </section>
+                        <section class="grid grid-cols-3">
+                            <p class="tracking-wide">Critic</p>
+                            <p class="font-bold">
+                                {% if review.critic_score is not none %}
+                                    {% if source.name|upper == "IMDB" %}
+                                        {% set score = review.critic_score / 10 / 2 %}
+                                        {% set score_rounded = score|round(0, 'ceil')|int %}
+                                        <span title="{{ score }}/5">
+                                        {% for _ in range(0, score_rounded) %}⭐{% endfor %}
+                                        </span>
+                                    {% else %}
+                                        {{ review.critic_score }}%
+                                    {% endif %}
+                                {% else %}
+                                    &mdash;
+                                {% endif %}
+                            </p>
+                            <p>
+                                {% if not review.critic_count %}
+                                    &mdash;
+                                {% else %}
+                                    {{ review.critic_count }}
+                                    {% if source.name|upper == "IMDB" %}
+                                        Reviews
+                                    {% endif %}
+                                {% endif %}
+                            </p>
+                        </section>
+                    </div>
+                </a>
             {% endfor %}
-        {% else %}
-            <p>This movie does not have any reviews</p>
-        {% endif %}
+        {% endfor %}
+        </div>
     {% endif %}
 </section>
 {% endblock %}
