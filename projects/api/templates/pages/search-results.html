@@ -12,7 +12,7 @@
         {% endwith %}
     {% endif %}
 
-    {% with movies=movies %}
+    {% with movies=movies, search_url=request.url %}
         {% include 'partials/movie-list.html' %}
     {% endwith %}
 </section>
