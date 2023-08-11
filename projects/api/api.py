@@ -63,7 +63,7 @@ async def search_movie(request: Request, q: str):
     movies = await MovieModel.filter(title__icontains=q)
 
     for movie in movies:
-        await movie.fetch_related("reviews")
+        await movie.fetch_related("sources__reviews")
 
     ctx = dict(request=request, movies=movies, query=q)
     return templates.TemplateResponse("pages/search-results.html", ctx)
