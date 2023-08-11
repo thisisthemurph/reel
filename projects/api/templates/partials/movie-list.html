@@ -2,7 +2,7 @@
 {% for movie in movies %}
     {% set url =  'm/' + (movie.id|string) %}
     {% if search_url %}
-        {% set url = url + '?back=' + (search_url|string) %}
+        {% set url = url + '?return_url=' + (search_url|string) %}
     {% endif %}
     <a href="{{ url }}" class="group flex justify-between py-4 border-b border-b-slate-300">
         <p class="text-md tracking-wide group-hover:text-yellow-600">{{ movie.title }}</p>

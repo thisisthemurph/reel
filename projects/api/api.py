@@ -49,14 +49,14 @@ async def index(request: Request):
 
 
 @api.get("/m/{movie_id}", response_class=HTMLResponse)
-async def movie_page(request: Request, movie_id: int, back: str | None = None):
+async def movie_page(request: Request, movie_id: int, return_url: str | None = None):
     movie = await MovieModel.filter(id=movie_id).first()
     if movie:
         await movie.fetch_related("sources__reviews")
 
-    print(back)
+    print(return_url)
 
-    ctx = dict(request=request, movie=movie, back=back)
+    ctx = dict(request=request, movie=movie, return_url=return_url)
     return templates.TemplateResponse("pages/movie.html", ctx)
 
 
