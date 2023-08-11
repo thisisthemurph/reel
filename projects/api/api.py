@@ -1,6 +1,8 @@
 import os
 import asyncio
+import urllib.parse
 
+import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.requests import Request
@@ -12,16 +14,15 @@ from tortoise.contrib.fastapi import register_tortoise
 from database import database as db
 from database.models import MovieModel
 
-api = FastAPI()
-api.mount("/static", StaticFiles(directory="projects/api/static"), name="static")
-templates = Jinja2Templates(directory="projects/api/templates")
 
 load_dotenv()
 database_url = os.getenv("DATABASE_URL")
+static_dir = "static" if os.getcwd().endswith("api") else "projects/api/static"
+templates_dir = "templates" if os.getcwd().endswith("api") else "projects/api/templates"
 
-
-async def init():
-    await db.init_database(database_url)
+api = FastAPI()
+api.mount("/static", StaticFiles(directory=static_dir), name="static")
+templates = Jinja2Templates(directory=templates_dir)
 
 
 @api.get("/", response_class=HTMLResponse)
@@ -34,7 +35,7 @@ async def index(request: Request):
             ON m.id = s.movie_id
         INNER JOIN reviews r
             ON s.id = r.source_id
-        WHERE m.release_date >= CURRENT_DATE - INTERVAL '30 days' 
+        WHERE m.release_date >= CURRENT_DATE - INTERVAL '30 days'
         ORDER BY m.release_date DESC NULLS LAST
         LIMIT(5)"""
     )
@@ -48,12 +49,14 @@ async def index(request: Request):
 
 
 @api.get("/m/{movie_id}", response_class=HTMLResponse)
-async def movie_page(request: Request, movie_id: int):
+async def movie_page(request: Request, movie_id: int, back: str | None = None):
     movie = await MovieModel.filter(id=movie_id).first()
     if movie:
         await movie.fetch_related("sources__reviews")
 
-    ctx = dict(request=request, movie=movie)
+    print(back)
+
+    ctx = dict(request=request, movie=movie, back=back)
     return templates.TemplateResponse("pages/movie.html", ctx)
 
 
@@ -69,8 +72,15 @@ async def search_movie(request: Request, q: str):
     return templates.TemplateResponse("pages/search-results.html", ctx)
 
 
+async def main():
+    await db.init_database(database_url)
+    config = uvicorn.Config("api:api", port=5000, log_level="info")
+    server = uvicorn.Server(config)
+    await server.serve()
+
+
 if __name__ == "__main__":
-    asyncio.run(init())
+    asyncio.run(main())
 
 register_tortoise(
     api,
